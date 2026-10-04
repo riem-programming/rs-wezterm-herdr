@@ -1,7 +1,13 @@
-# herdr configuration template.
-# install.ps1 replaces {{GIT_BASH}} with the detected Git Bash path and writes the
-# result to %APPDATA%\herdr\config.toml. Commands must stay single-quoted TOML
-# literal strings so backslashes are not treated as escapes.
+# herdr configuration template (copied as-is to %APPDATA%\herdr\config.toml).
+#
+# herdr runs custom commands on Windows as `cmd.exe /d /c <command>`. cmd's /c
+# quote rule strips the first and last quote when the string starts with a quote
+# and contains more than two, so a quoted Git Bash path plus a quoted script path
+# breaks when either path contains spaces. Each command therefore has exactly ONE
+# quoted token (the launcher) plus a bare script name. install.ps1 writes the
+# launcher %APPDATA%\herdr\run.cmd, which holds the detected Git Bash path and runs
+# scripts\<name>. %APPDATA% is expanded by cmd, so spaces in it are fine too.
+# Commands must stay single-quoted TOML literal strings (backslashes stay literal).
 onboarding = false
 
 [theme]
@@ -33,13 +39,13 @@ type = "popup"
 width = "60%"
 height = "50%"
 description = "Workspace finder"
-command = '{{GIT_BASH}} --noprofile --norc "%APPDATA%\herdr\scripts\workspace-finder.sh"'
+command = '"%APPDATA%\herdr\run.cmd" workspace-finder.sh'
 
 [[keys.command]]
 key = "ctrl+alt+e"
 type = "shell"
 description = "Open or jump to nvim tab"
-command = '{{GIT_BASH}} --noprofile --norc "%APPDATA%\herdr\scripts\open-editor.sh"'
+command = '"%APPDATA%\herdr\run.cmd" open-editor.sh'
 
 [[keys.command]]
 key = "ctrl+alt+g"
@@ -47,4 +53,4 @@ type = "popup"
 width = "75%"
 height = "75%"
 description = "Shortcut cheat sheet"
-command = '{{GIT_BASH}} --noprofile --norc "%APPDATA%\herdr\scripts\shortcuts.sh"'
+command = '"%APPDATA%\herdr\run.cmd" shortcuts.sh'

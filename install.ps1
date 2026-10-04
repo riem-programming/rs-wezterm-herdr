@@ -6,7 +6,9 @@
 .DESCRIPTION
   1. Installs tools with winget (skipped with -SkipTools; already-installed tools are skipped).
   2. Installs herdr with its official installer, only if it is not present.
-  3. Backs up every existing target to <name>.bak-<timestamp>, then copies the configs.
+  3. Copies the configs. Targets that differ from the repo are first backed up to
+     <name>.bak-<timestamp>; targets that are already identical are left alone.
+     NOTE: this replaces your PowerShell 7 profile (the old one is backed up).
   4. Reloads the herdr config if the herdr server is running.
 
   Safe to re-run. With -DryRun nothing is installed, copied or changed.
@@ -17,13 +19,17 @@
 .PARAMETER DryRun
   Print what would happen without writing anything.
 
+.PARAMETER Yes
+  Do not ask for confirmation before running the official herdr installer.
+
 .EXAMPLE
   pwsh ./install.ps1 -DryRun -SkipTools
 #>
 [CmdletBinding()]
 param(
     [switch]$SkipTools,
-    [switch]$DryRun
+    [switch]$DryRun,
+    [switch]$Yes
 )
 
 Set-StrictMode -Version Latest
@@ -56,16 +62,19 @@ function Find-GitBash {
     $candidates = @(
         (Join-Path $env:ProgramFiles 'Git\bin\bash.exe'),
         (Join-Path $env:LOCALAPPDATA 'Programs\Git\bin\bash.exe'),
-        (Join-Path ${env:ProgramFiles(x86)} 'Git\bin\bash.exe')
+        $null
     )
+    $pf86 = ${env:ProgramFiles(x86)}
+    if ($pf86) { $candidates[2] = Join-Path $pf86 'Git\bin\bash.exe' }
     foreach ($path in $candidates) {
         if ($path -and (Test-Path -LiteralPath $path)) { return $path }
     }
     # Custom install location: registry written by the Git for Windows installer.
     foreach ($hive in 'HKLM:', 'HKCU:') {
         $key = Get-ItemProperty -Path "$hive\SOFTWARE\GitForWindows" -ErrorAction SilentlyContinue
-        if ($key -and $key.InstallPath) {
-            $bash = Join-Path $key.InstallPath 'bin\bash.exe'
+        $prop = if ($key) { $key.PSObject.Properties['InstallPath'] } else { $null }
+        if ($prop -and $prop.Value) {
+            $bash = Join-Path $prop.Value 'bin\bash.exe'
             if (Test-Path -LiteralPath $bash) { return $bash }
         }
     }
@@ -90,9 +99,27 @@ function Backup-Existing([string]$Path) {
     Write-Note "backed up $Path -> $backup"
 }
 
+function Get-PathHash([string]$Path) {
+    # File: SHA256 of its bytes. Directory: SHA256 over every file's relative path and hash.
+    if (Test-Path -LiteralPath $Path -PathType Container) {
+        $root = (Resolve-Path -LiteralPath $Path).ProviderPath.TrimEnd('\')
+        $lines = Get-ChildItem -LiteralPath $Path -Recurse -File -Force | Sort-Object FullName | ForEach-Object {
+            $rel = $_.FullName.Substring($root.Length)
+            "$rel|$((Get-FileHash -LiteralPath $_.FullName -Algorithm SHA256).Hash)"
+        }
+        $bytes = [Text.Encoding]::UTF8.GetBytes(($lines -join "`n"))
+        return [BitConverter]::ToString([Security.Cryptography.SHA256]::HashData($bytes)).Replace('-', '')
+    }
+    return (Get-FileHash -LiteralPath $Path -Algorithm SHA256).Hash
+}
+
 function Install-File([string]$Source, [string]$Target) {
+    if ((Test-Path -LiteralPath $Target -PathType Leaf) -and ((Get-PathHash $Source) -eq (Get-PathHash $Target))) {
+        Write-Note "unchanged, skipped: $Target"
+        return
+    }
     if ($DryRun) {
-        if (Test-Path -LiteralPath $Target) { Backup-Existing $Target }
+        Backup-Existing $Target
         Write-Plan "copy $Source -> $Target"
         return
     }
@@ -102,9 +129,32 @@ function Install-File([string]$Source, [string]$Target) {
     Write-Note "installed $Target"
 }
 
-function Install-Directory([string]$Source, [string]$Target) {
+function Install-Text([string]$Content, [string]$Target, [string]$Label) {
+    # Writes generated text (UTF-8, no BOM) unless the target already has identical bytes.
+    $bytes = [Text.UTF8Encoding]::new($false).GetBytes($Content)
+    $newHash = [BitConverter]::ToString([Security.Cryptography.SHA256]::HashData($bytes)).Replace('-', '')
+    if ((Test-Path -LiteralPath $Target -PathType Leaf) -and ((Get-PathHash $Target) -eq $newHash)) {
+        Write-Note "unchanged, skipped: $Target"
+        return
+    }
     if ($DryRun) {
-        if (Test-Path -LiteralPath $Target) { Backup-Existing $Target }
+        Backup-Existing $Target
+        Write-Plan "write $Label -> $Target"
+        return
+    }
+    New-Item -ItemType Directory -Force -Path (Split-Path $Target) | Out-Null
+    Backup-Existing $Target
+    [IO.File]::WriteAllBytes($Target, $bytes)
+    Write-Note "installed $Target"
+}
+
+function Install-Directory([string]$Source, [string]$Target) {
+    if ((Test-Path -LiteralPath $Target -PathType Container) -and ((Get-PathHash $Source) -eq (Get-PathHash $Target))) {
+        Write-Note "unchanged, skipped: $Target"
+        return
+    }
+    if ($DryRun) {
+        Backup-Existing $Target
         Write-Plan "copy directory $Source -> $Target"
         return
     }
@@ -155,7 +205,18 @@ function Install-Herdr {
     Write-Note 'It installs to %LOCALAPPDATA%\Programs\Herdr and updates your user PATH (no admin).'
     Write-Note "To review it first: irm $url | more"
     if ($DryRun) { Write-Plan "irm $url | iex"; return }
-    Invoke-RestMethod $url | Invoke-Expression
+    if (-not $Yes) {
+        $answer = Read-Host 'Install herdr with the official installer? [y/N]'
+        if ($answer -notmatch '^(y|yes)$') {
+            Write-Warning 'Skipped the herdr install. Install it later from https://herdr.dev or re-run with -Yes.'
+            return
+        }
+    }
+    try {
+        Invoke-RestMethod $url | Invoke-Expression
+    } catch {
+        Write-Warning "herdr installation failed: $($_.Exception.Message). Continuing with the rest; install herdr manually from https://herdr.dev."
+    }
 }
 
 function Install-Configs {
@@ -164,7 +225,11 @@ function Install-Configs {
     # WezTerm
     Install-File (Join-Path $RepoRoot 'wezterm\wezterm.lua') (Join-Path $HOME '.config\wezterm\wezterm.lua')
 
-    # herdr: render the template with the detected Git Bash path
+    # herdr: the config is copied as-is. The launcher run.cmd holds the Git Bash path
+    # (see the quoting notes in herdr\config.toml.tmpl).
+    $herdrDir = Join-Path $env:APPDATA 'herdr'
+    Install-File (Join-Path $RepoRoot 'herdr\config.toml.tmpl') (Join-Path $herdrDir 'config.toml')
+
     $gitBash = Find-GitBash
     if (-not $gitBash) {
         Write-Warning 'Git Bash not found. herdr popups (finder, editor, cheat sheet) will not work until you install Git and re-run.'
@@ -172,20 +237,11 @@ function Install-Configs {
     } else {
         Write-Note "Git Bash: $gitBash"
     }
-    $herdrDir = Join-Path $env:APPDATA 'herdr'
-    $template = Get-Content -LiteralPath (Join-Path $RepoRoot 'herdr\config.toml.tmpl') -Raw
-    $rendered = $template.Replace('{{GIT_BASH}}', $gitBash)
-    $configTarget = Join-Path $herdrDir 'config.toml'
-    if ($DryRun) {
-        if (Test-Path -LiteralPath $configTarget) { Backup-Existing $configTarget }
-        Write-Plan "render herdr\config.toml.tmpl ({{GIT_BASH}} = $gitBash) -> $configTarget"
-    } else {
-        New-Item -ItemType Directory -Force -Path $herdrDir | Out-Null
-        Backup-Existing $configTarget
-        # No BOM: herdr parses the file as plain UTF-8 TOML.
-        [IO.File]::WriteAllText($configTarget, $rendered, [Text.UTF8Encoding]::new($false))
-        Write-Note "installed $configTarget"
+    if ($gitBash.Contains('"') -or $gitBash.Contains('%')) {
+        throw "The Git Bash path contains a double quote or percent sign and cannot be used safely in a cmd launcher: $gitBash"
     }
+    $launcher = "@`"$gitBash`" --noprofile --norc `"%~dp0scripts\%~1`"`r`n"
+    Install-Text $launcher (Join-Path $herdrDir 'run.cmd') 'herdr launcher run.cmd'
 
     # herdr scripts. Keep LF endings: bash chokes on CRLF.
     Install-Directory (Join-Path $RepoRoot 'herdr\scripts') (Join-Path $herdrDir 'scripts')
@@ -221,4 +277,4 @@ Write-Step 'Done'
 Write-Note '1. Fully restart WezTerm so it picks up the new config.'
 Write-Note '2. Launch nvim once: plugins, treesitter parsers and LSPs install on first run.'
 Write-Note '3. Press Ctrl+Shift+H inside herdr for the shortcut cheat sheet.'
-Write-Note "Previous files were saved as <name>.bak-$Stamp."
+Write-Note "Replaced files were saved as <name>.bak-$Stamp (identical files are skipped)."
