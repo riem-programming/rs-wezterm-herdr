@@ -54,102 +54,26 @@ herdr runs custom commands through `cmd.exe /d /c`, whose quote handling breaks 
 
 ## Keyboard shortcuts
 
-Press `Ctrl+Shift+H` at any time to open this list in a filterable popup. The source of truth is `herdr/scripts/shortcuts.txt`; update it whenever you change a binding.
+These are the custom bindings this setup adds. Press `Ctrl+Shift+H` at any time to open this list in a filterable popup. The source of truth is `herdr/scripts/shortcuts.txt`; update it whenever you change a binding.
 
-#### Help
+| Area | Keys | Action |
+| --- | --- | --- |
+| Help | `Ctrl+Shift+H` | Show this shortcut list |
+| Workspaces | `Ctrl+T` / `Ctrl+Shift+F` | Workspace finder (type to filter, Esc closes) |
+| Workspaces | Finder: `Enter` | Open the selected workspace |
+| Workspaces | Finder: `+ New workspace` | Ask for a name (Esc goes back) and create a workspace |
+| Workspaces | Finder: unknown name + `Enter` | Create a workspace with that name |
+| Workspaces | `Ctrl+Alt+N` | New workspace (asks for a name) |
+| Workspaces | `Ctrl+Shift+Tab` | Next workspace |
+| Tabs | `Ctrl+Shift+D` | New tab in the current folder |
+| Tabs | `Ctrl+Shift+W` | Close tab |
+| Tabs | `Ctrl+Tab` | Next tab |
+| Editor | `Ctrl+Shift+E` | Open Neovim (or jump to its tab) |
+| Neovim | `-` | Go to the parent folder (oil) |
+| Terminal | `Ctrl+C` | Copy if text is selected, otherwise interrupt |
+| Terminal | Right click | Paste |
 
-| Keys | Action |
-| --- | --- |
-| `Ctrl+Shift+H` | Show this shortcut list |
-
-#### Terminal
-
-| Keys | Action |
-| --- | --- |
-| `Ctrl+Shift+C` | Copy selection |
-| `Ctrl+Shift+V` | Paste |
-| `Right click` | Paste |
-| `Ctrl+C` | Copy if text is selected, otherwise interrupt |
-| `Alt+V` | Paste image in Claude Code |
-
-#### Workspaces
-
-| Keys | Action |
-| --- | --- |
-| `Ctrl+T / Ctrl+Shift+F` | Workspace finder (type to filter, Esc closes) |
-| `Finder: Enter` | Open the selected workspace |
-| `Finder: + New workspace` | Ask for a name and create a workspace |
-| `Finder: unknown name + Enter` | Create a workspace with that name |
-| `Ctrl+Alt+N` | New workspace (asks for a name) |
-| `Ctrl+Shift+Tab` | Next workspace |
-| `Ctrl+B Shift+W` | Rename workspace |
-| `Ctrl+B Shift+D` | Close workspace |
-
-#### Tabs
-
-| Keys | Action |
-| --- | --- |
-| `Ctrl+Shift+D` | New tab in the current folder |
-| `Ctrl+Shift+W` | Close tab |
-| `Ctrl+Tab` | Next tab |
-| `Ctrl+B P` | Previous tab |
-| `Ctrl+B Shift+T` | Rename tab |
-
-#### Panes
-
-| Keys | Action |
-| --- | --- |
-| `Ctrl+B V` | Split right |
-| `Ctrl+B -` | Split down |
-| `Ctrl+B H/J/K/L` | Move between panes |
-| `Ctrl+B Z` | Zoom pane |
-| `Ctrl+B X` | Close pane |
-
-#### herdr
-
-| Keys | Action |
-| --- | --- |
-| `Ctrl+B ?` | Show every herdr binding |
-| `Ctrl+B Q` | Detach (herdr keeps running) |
-
-#### Editor
-
-| Keys | Action |
-| --- | --- |
-| `Ctrl+Shift+E` | Open Neovim (or jump to its tab) |
-
-#### Neovim
-
-| Keys | Action |
-| --- | --- |
-| `Space` | Menu with every Neovim shortcut |
-| `Space F F` | Find files |
-| `Space F R` | Recent files |
-| `Space /` | Search text in the project |
-| `Alt+P` | Toggle preview inside the finder |
-| `Space E` | File tree |
-| `Space G G` | lazygit |
-| `gd` | Go to definition |
-| `K` | Show docs for the symbol under the cursor |
-| `Space C A` | Code actions |
-| `Ctrl+U / Ctrl+D` | Half page up / down |
-| `Ctrl+V` | Visual block selection |
-| `u / Ctrl+R` | Undo / redo |
-| `:w` | Save |
-| `:e!` | Discard changes |
-| `:qa` | Quit Neovim |
-
-#### Oil
-
-| Keys | Action |
-| --- | --- |
-| `-` | Go to the parent folder |
-| `Enter` | Open folder or file |
-| `g.` | Show or hide hidden files |
-| `g?` | Oil help |
-| `Edit name + :w` | Rename a file |
-| `dd + :w` | Delete a file |
-| `New line + :w` | Create a file (end with / for a folder) |
+Built-in defaults still apply on top of these: `Ctrl+Shift+C` / `Ctrl+Shift+V` copy and paste (WezTerm), `Ctrl+B ?` lists every herdr binding, `Space` opens the LazyVim key menu, and `g?` shows oil's help.
 
 ## Design notes
 
