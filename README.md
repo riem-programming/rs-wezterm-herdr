@@ -2,7 +2,7 @@
 
 A portable terminal environment for Windows 11: **WezTerm** (terminal) + **herdr** (workspace, tab and pane manager) + **LazyVim** (Neovim). One script installs the tools and drops the configs in place.
 
-> Screenshot placeholder: add `docs/screenshot.png` and reference it here.
+Screenshots: coming soon.
 
 ## Requirements
 
@@ -13,20 +13,23 @@ A portable terminal environment for Windows 11: **WezTerm** (terminal) + **herdr
 ## Quick install
 
 ```powershell
-git clone <this-repo-url> rs-wezterm-herdr
+git clone https://github.com/riem-programming/rs-wezterm-herdr rs-wezterm-herdr
 cd rs-wezterm-herdr
-pwsh ./install.ps1            # tools + configs
+pwsh ./install.ps1            # tools + configs (asks before installing herdr)
 pwsh ./install.ps1 -DryRun    # preview only, writes nothing
 pwsh ./install.ps1 -SkipTools # configs only
+pwsh ./install.ps1 -Yes       # do not ask before running the herdr installer
 ```
 
 Then fully restart WezTerm. The first `nvim` launch installs plugins, parsers and LSPs.
 
-The installer is idempotent: installed tools are skipped, and every existing target is backed up before being replaced.
+> **Warning: your PowerShell profile is replaced.** `Documents\PowerShell\Microsoft.PowerShell_profile.ps1` is overwritten with the one from this repo. The previous one is kept as `Microsoft.PowerShell_profile.ps1.bak-<timestamp>`. The same applies to the WezTerm config, the herdr config and scripts, and the whole `nvim` folder. Run with `-DryRun` first to see exactly what will happen.
+
+The installer is idempotent: installed tools are skipped, and every existing target that differs from the repo is backed up (`<name>.bak-<timestamp>`) before being replaced. Targets that are already byte-identical (compared by SHA256, directories by a hash of all their files) are skipped, so re-running does not create new backups.
 
 ### herdr installer
 
-herdr is installed with its official script (`irm https://herdr.dev/install.ps1 | iex`) only when it is not already present. The script prints what it will do first. To review it before running:
+herdr is installed with its official script (`irm https://herdr.dev/install.ps1 | iex`) only when it is not already present. The installer asks `Install herdr with the official installer? [y/N]` first; pass `-Yes` to skip the question. If the herdr install fails, a warning is printed and the rest of the setup continues. To review the script before running it:
 
 ```powershell
 irm https://herdr.dev/install.ps1 | more
@@ -41,12 +44,13 @@ WezTerm, Git, fzf, jq, Neovim, Zig, fd, lazygit, tree-sitter CLI, Node.js LTS, P
 | Repo path | Target |
 | --- | --- |
 | `wezterm/wezterm.lua` | `~\.config\wezterm\wezterm.lua` |
-| `herdr/config.toml.tmpl` (rendered) | `%APPDATA%\herdr\config.toml` |
+| `herdr/config.toml.tmpl` | `%APPDATA%\herdr\config.toml` |
+| (generated) | `%APPDATA%\herdr\run.cmd` (launcher holding the Git Bash path) |
 | `herdr/scripts/` | `%APPDATA%\herdr\scripts\` |
 | `powershell/Microsoft.PowerShell_profile.ps1` | `Documents\PowerShell\Microsoft.PowerShell_profile.ps1` |
 | `nvim/` | `%LOCALAPPDATA%\nvim\` |
 
-`config.toml.tmpl` contains a `{{GIT_BASH}}` placeholder. TOML cannot compute paths, so the installer detects Git Bash (Program Files, `%LOCALAPPDATA%\Programs\Git`, the Git for Windows registry key, or `git.exe` on PATH) and writes the result.
+herdr runs custom commands through `cmd.exe /d /c`, whose quote handling breaks on a quoted Git Bash path plus a quoted script path when either contains spaces. So each herdr command is just `"%APPDATA%\herdr\run.cmd" <script>.sh`, and the installer generates `run.cmd` with the detected Git Bash path (Program Files, `%LOCALAPPDATA%\Programs\Git`, the Git for Windows registry key, or `git.exe` on PATH).
 
 ## Keyboard shortcuts
 
@@ -159,7 +163,7 @@ Press `Ctrl+Shift+H` at any time to open this list in a filterable popup. The so
 
 ## Troubleshooting
 
-- **A popup does nothing** (`Ctrl+T`, `Ctrl+Shift+E`, `Ctrl+Shift+H`): check the Git Bash path in `%APPDATA%\herdr\config.toml`. If Git was installed after the repo, re-run `pwsh ./install.ps1 -SkipTools`.
+- **A popup does nothing** (`Ctrl+T`, `Ctrl+Shift+E`, `Ctrl+Shift+H`): check the Git Bash path in `%APPDATA%\herdr\run.cmd`. If Git was installed after the repo, re-run `pwsh ./install.ps1 -SkipTools`.
 - **Treesitter parser compile fails**: make sure `zig` and `tree-sitter` are on PATH (open a new terminal after installing). Delete stale locks in `%LOCALAPPDATA%\tree-sitter\lock` if a previous install was interrupted.
 - **"Swap file already exists"**: swap files are disabled in this config; remove leftovers from `%LOCALAPPDATA%\nvim-data\swap`.
 - **Icons look broken**: install JetBrainsMono Nerd Font manually from the [Nerd Fonts releases](https://github.com/ryanoasis/nerd-fonts/releases) if the winget package is unavailable.
@@ -167,7 +171,7 @@ Press `Ctrl+Shift+H` at any time to open this list in a filterable popup. The so
 
 ## Uninstall / restore
 
-Every file or folder the installer replaces is first renamed to `<name>.bak-<timestamp>` next to the original. To restore, delete the installed target and rename the backup back, for example:
+Every file or folder the installer replaces (when it differs from the repo version) is first renamed to `<name>.bak-<timestamp>` next to the original. To restore, delete the installed target and rename the backup back, for example:
 
 ```powershell
 Remove-Item $env:LOCALAPPDATA\nvim -Recurse -Force
@@ -178,4 +182,4 @@ Tools installed through winget can be removed with `winget uninstall <id>`. herd
 
 ## License
 
-MIT. See [LICENSE](LICENSE).
+`nvim/` is based on [LazyVim/starter](https://github.com/LazyVim/starter) (Apache-2.0, see [nvim/LICENSE-LazyVim-starter](nvim/LICENSE-LazyVim-starter)). Everything else is MIT, see [LICENSE](LICENSE).
