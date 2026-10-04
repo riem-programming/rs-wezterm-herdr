@@ -1,0 +1,50 @@
+# herdr configuration template.
+# install.ps1 replaces {{GIT_BASH}} with the detected Git Bash path and writes the
+# result to %APPDATA%\herdr\config.toml. Commands must stay single-quoted TOML
+# literal strings so backslashes are not treated as escapes.
+onboarding = false
+
+[theme]
+name = "tokyo-night"
+auto_switch = false
+
+[ui.toast]
+delivery = "off"
+
+[ui.sound]
+enabled = true
+
+[ui]
+status_indicators = "dots"
+prompt_new_workspace_name = true
+prompt_new_tab_name = false
+
+[keys]
+new_workspace = ["prefix+shift+n", "ctrl+alt+n"]
+new_tab = ["prefix+c", "ctrl+alt+c"]
+next_tab = ["prefix+n", "ctrl+alt+l"]
+previous_tab = "prefix+p"
+next_workspace = "ctrl+alt+w"
+close_tab = ["prefix+shift+x", "ctrl+alt+x"]
+
+[[keys.command]]
+key = "ctrl+alt+f"
+type = "popup"
+width = "60%"
+height = "50%"
+description = "Workspace finder"
+command = '{{GIT_BASH}} --noprofile --norc "%APPDATA%\herdr\scripts\workspace-finder.sh"'
+
+[[keys.command]]
+key = "ctrl+alt+e"
+type = "shell"
+description = "Open or jump to nvim tab"
+command = '{{GIT_BASH}} --noprofile --norc "%APPDATA%\herdr\scripts\open-editor.sh"'
+
+[[keys.command]]
+key = "ctrl+alt+g"
+type = "popup"
+width = "75%"
+height = "75%"
+description = "Shortcut cheat sheet"
+command = '{{GIT_BASH}} --noprofile --norc "%APPDATA%\herdr\scripts\shortcuts.sh"'

@@ -1,0 +1,11 @@
+# Backups created by install.ps1
+*.bak-*
+
+# Neovim local artifacts
+nvim/lazy-lock.json.bak
+nvim/.repro/
+nvim/data/
+
+# Editor / OS
+.vscode/
+Thumbs.db

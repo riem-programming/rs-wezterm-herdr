@@ -1,0 +1,50 @@
+Help	Ctrl+Shift+H	Show this shortcut list
+Terminal	Ctrl+Shift+C	Copy selection
+Terminal	Ctrl+Shift+V	Paste
+Terminal	Right click	Paste
+Terminal	Ctrl+C	Copy if text is selected, otherwise interrupt
+Terminal	Alt+V	Paste image in Claude Code
+Workspaces	Ctrl+T / Ctrl+Shift+F	Workspace finder (type to filter, Esc closes)
+Workspaces	Finder: Enter	Open the selected workspace
+Workspaces	Finder: + New workspace	Ask for a name and create a workspace
+Workspaces	Finder: unknown name + Enter	Create a workspace with that name
+Workspaces	Ctrl+Alt+N	New workspace (asks for a name)
+Workspaces	Ctrl+Shift+Tab	Next workspace
+Workspaces	Ctrl+B Shift+W	Rename workspace
+Workspaces	Ctrl+B Shift+D	Close workspace
+Tabs	Ctrl+Shift+D	New tab in the current folder
+Tabs	Ctrl+Shift+W	Close tab
+Tabs	Ctrl+Tab	Next tab
+Tabs	Ctrl+B P	Previous tab
+Tabs	Ctrl+B Shift+T	Rename tab
+Panes	Ctrl+B V	Split right
+Panes	Ctrl+B -	Split down
+Panes	Ctrl+B H/J/K/L	Move between panes
+Panes	Ctrl+B Z	Zoom pane
+Panes	Ctrl+B X	Close pane
+herdr	Ctrl+B ?	Show every herdr binding
+herdr	Ctrl+B Q	Detach (herdr keeps running)
+Editor	Ctrl+Shift+E	Open Neovim (or jump to its tab)
+Neovim	Space	Menu with every Neovim shortcut
+Neovim	Space F F	Find files
+Neovim	Space F R	Recent files
+Neovim	Space /	Search text in the project
+Neovim	Alt+P	Toggle preview inside the finder
+Neovim	Space E	File tree
+Neovim	Space G G	lazygit
+Neovim	gd	Go to definition
+Neovim	K	Show docs for the symbol under the cursor
+Neovim	Space C A	Code actions
+Neovim	Ctrl+U / Ctrl+D	Half page up / down
+Neovim	Ctrl+V	Visual block selection
+Neovim	u / Ctrl+R	Undo / redo
+Neovim	:w	Save
+Neovim	:e!	Discard changes
+Neovim	:qa	Quit Neovim
+Oil	-	Go to the parent folder
+Oil	Enter	Open folder or file
+Oil	g.	Show or hide hidden files
+Oil	g?	Oil help
+Oil	Edit name + :w	Rename a file
+Oil	dd + :w	Delete a file
+Oil	New line + :w	Create a file (end with / for a folder)
